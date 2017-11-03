@@ -1,0 +1,6 @@
+<form id="payment-form" action="{$form_url}" method="GET">
+    <input type="hidden" name="order_id" value="{$order_id}">
+    <script src="{$checkout_url}" class="rbkmoney-checkout"
+            {$checkout_params}
+    ></script>
+</form>
