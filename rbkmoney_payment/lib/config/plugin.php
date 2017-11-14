@@ -1,11 +1,21 @@
 <?php
+/**
+ * Payment plugin general description
+ */
 return array(
     'name'        => 'RBKmoney',
     'description' => 'Payment system <a href="http://rbkmoney.com/">RBKmoney</a>',
+
+    # plugin icon
     'icon'        => 'img/rbkmoney16.png',
+
+    # default payment gateway logo
     'logo'        => 'img/rbkmoney.png',
-    'vendor'      => 'webasyst',
-    'version'     => '1.0.2',
+    # plugin vendor ID (for 3rd parties vendors it's a number)
+    'vendor'      => '1094150',
+
+    # plugin version
+    'version'     => '1.0.0',
     'locale'      => array('ru_RU', ),
     'type'        => waPayment::TYPE_ONLINE,
 );

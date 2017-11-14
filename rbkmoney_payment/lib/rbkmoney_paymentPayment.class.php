@@ -20,7 +20,7 @@
  * @see https://rbkmoney.github.io/api/
  * @see https://rbkmoney.github.io/webhooks-events-api/
  */
-class rbkmoneyPayment extends waPayment implements waIPayment
+class rbkmoney_paymentPayment extends waPayment implements waIPayment
 {
     /**
      * URL for interaction
@@ -157,9 +157,19 @@ class rbkmoneyPayment extends waPayment implements waIPayment
             $dataCheckout["data-pay-button-label"] = $payFormPayButtonLabel;
         }
 
+        $payFormLabel = $this->payform_label;
+        if (!empty($payFormLabel)) {
+            $dataCheckout["data-label"] = $payFormLabel;
+        }
+
         $payFormLogo = $this->payform_path_logo;
         if (!empty($payFormLogo)) {
             $dataCheckout["logo"] = $payFormLogo;
+        }
+
+        $contact = $order->getContactField('email');
+        if (!empty($contact)) {
+            $dataCheckout["data-email"] = $contact;
         }
 
         $dataCheckout["data-invoice-id"] = ifset($response["invoice"]["id"]);
@@ -220,7 +230,7 @@ class rbkmoneyPayment extends waPayment implements waIPayment
             $view_data[] = $field . ': ' . $description;
         }
 
-        if($fields['amount'] <= 0) {
+        if ($fields['amount'] <= 0) {
             throw new waPaymentException('Amount is missing');
         }
 
@@ -353,7 +363,6 @@ class rbkmoneyPayment extends waPayment implements waIPayment
 
 
         $transaction_data = $this->formalizeData($data);
-        $callback_method = null;
         switch (ifset($transaction_data['state'])) {
             case self::STATE_CAPTURED:
                 $callback_method = self::CALLBACK_PAYMENT;
@@ -361,6 +370,8 @@ class rbkmoneyPayment extends waPayment implements waIPayment
             case self::STATE_CANCELED:
                 $callback_method = self::CALLBACK_CANCEL;
                 break;
+            default:
+                $callback_method = null;
         }
 
         if ($callback_method) {
@@ -426,7 +437,7 @@ class rbkmoneyPayment extends waPayment implements waIPayment
         return [
             'cms' => 'shop-script',
             'cms_version' => "1.7.17",
-            'module' => "rbkmoney",
+            'module' => "rbkmoney_payment",
             'order_id' => sprintf($this->template, $this->app_id, $this->merchant_id, $order->id),
         ];
     }
@@ -463,10 +474,10 @@ class rbkmoneyPayment extends waPayment implements waIPayment
             $price = number_format($amount, 2, ',', '');
             $item['price'] = $this->prepareAmount($price);
 
-            if (!empty($product['rate'])) {
+            if (!empty($product['tax_rate'])) {
                 $taxMode = [
                     'type' => 'InvoiceLineTaxVAT',
-                    'rate' => $this->getTaxRate($product['rate']),
+                    'rate' => $this->getTaxRate($product['tax_rate']),
                 ];
 
                 $item['taxMode'] = $taxMode;
@@ -521,27 +532,32 @@ class rbkmoneyPayment extends waPayment implements waIPayment
     private function getTaxRate($rate)
     {
         switch ($rate) {
-
+            // НДС чека по ставке 0%;
             case 0:
                 return '0%';
                 break;
 
+            // НДС чека по ставке 10%;
             case 10:
                 return '10%';
                 break;
 
+            // НДС чека по ставке 18%;
             case 18:
                 return '18%';
                 break;
 
+            // НДС чека по ставке 10/110;
             case 10100:
                 return '10/110';
                 break;
 
+            // НДС чека по ставке 18/118;
             case 18118:
                 return '18/118';
                 break;
 
+            //без НДС;
             default:
                 return null;
                 break;
