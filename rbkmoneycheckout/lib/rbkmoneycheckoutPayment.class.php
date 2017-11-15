@@ -20,7 +20,7 @@
  * @see https://rbkmoney.github.io/api/
  * @see https://rbkmoney.github.io/webhooks-events-api/
  */
-class rbkmoney_paymentPayment extends waPayment implements waIPayment
+class rbkmoneycheckoutPayment extends waPayment implements waIPayment
 {
     /**
      * URL for interaction
@@ -322,20 +322,20 @@ class rbkmoney_paymentPayment extends waPayment implements waIPayment
      */
     protected function callbackHandler($request)
     {
-        if (empty($_SERVER[static::SIGNATURE])) {
+        if (empty(waRequest::server(static::SIGNATURE))) {
             $message = 'Webhook notification signature missing';
-            $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
         }
 
-        $paramsSignature = $this->getParametersContentSignature($_SERVER[static::SIGNATURE]);
+        $paramsSignature = $this->getParametersContentSignature(waRequest::server(static::SIGNATURE));
         if (empty($paramsSignature[static::SIGNATURE_ALG])) {
             $message = 'Missing required parameter ' . static::SIGNATURE_ALG;
-            $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
         }
 
         if (empty($paramsSignature[static::SIGNATURE_DIGEST])) {
             $message = 'Missing required parameter ' . static::SIGNATURE_DIGEST;
-            $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
         }
 
 
@@ -344,7 +344,7 @@ class rbkmoney_paymentPayment extends waPayment implements waIPayment
         $publicKey = '-----BEGIN PUBLIC KEY-----' . PHP_EOL . trim($this->webhook_key) . PHP_EOL . '-----END PUBLIC KEY-----';
         if (!$this->verificationSignature($content, $signature, $publicKey)) {
             $message = 'Webhook notification signature mismatch';
-            $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
         }
 
 
@@ -352,13 +352,13 @@ class rbkmoney_paymentPayment extends waPayment implements waIPayment
         $currentShopId = $this->shop_id;
         if ($data['invoice']['shopID'] != $currentShopId) {
             $message = 'Shop ID is missing';
-            $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
         }
 
         $orderId = ifset($data['invoice']['metadata']['order_id'], "");
         if (empty($orderId)) {
             $message = 'Order ID is missing';
-            $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
         }
 
 
@@ -437,7 +437,7 @@ class rbkmoney_paymentPayment extends waPayment implements waIPayment
         return [
             'cms' => 'shop-script',
             'cms_version' => "1.7.17",
-            'module' => "rbkmoney_payment",
+            'module' => "rbkmoneycheckout",
             'order_id' => sprintf($this->template, $this->app_id, $this->merchant_id, $order->id),
         ];
     }
@@ -536,29 +536,23 @@ class rbkmoney_paymentPayment extends waPayment implements waIPayment
             case 0:
                 return '0%';
                 break;
-
             // НДС чека по ставке 10%;
             case 10:
                 return '10%';
                 break;
-
             // НДС чека по ставке 18%;
             case 18:
                 return '18%';
                 break;
-
             // НДС чека по ставке 10/110;
             case 10100:
                 return '10/110';
                 break;
-
             // НДС чека по ставке 18/118;
             case 18118:
                 return '18/118';
                 break;
-
-            //без НДС;
-            default:
+            default: # — без НДС;
                 return null;
                 break;
         }
@@ -626,7 +620,7 @@ class rbkmoney_paymentPayment extends waPayment implements waIPayment
     {
         http_response_code($httpCode);
         echo json_encode(array('message' => $message));
-        exit();
+        return;
     }
 
 }

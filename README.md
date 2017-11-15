@@ -7,7 +7,7 @@ Shop-Script: the payment module, provides payments through RBKmoney payment syst
 
 #### Установка
 
-Для установки модуля скопируйте папку `rbkmoney` в `/wa-plugins/payment`
+Для установки модуля скопируйте папку `rbkmoneycheckout` в `/wa-plugins/payment`
 
 
 #### Настройка модуля
