@@ -3,8 +3,8 @@
 
 /**
  * @author RBKmoney
- * @name RBKmoney
- * @description RBKmoney Payments
+ * @name RBKmoneyCheckout
+ * @description RBKmoney payment module
  * @link https://developers.webasyst.ru/cookbook/plugins/payment-plugins/
  *
  * Plugin settings parameters must be specified in file lib/config/settings.php
@@ -106,7 +106,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
         $order = waOrder::factory($order_data);
 
         $description = str_replace('#', '№', mb_substr($order->description, 0, 255, "UTF-8"));
-        $data = [
+        $data = array(
             'shopID' => $this->shop_id,
             'amount' => $this->prepareAmount($order['amount']),
             'metadata' => $this->prepareMetadata($order),
@@ -115,7 +115,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             'product' => $description,
             'cart' => $this->prepareCart($order),
             'description' => '',
-        ];
+        );
 
         $url = $this->getEndpointUrl() . 'processing/invoices';
         $headers = $this->prepareHeaders($this->api_key);
@@ -392,7 +392,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      */
     private function prepareHeaders($apiKey)
     {
-        $headers = [];
+        $headers = array();
         $headers[] = 'X-Request-ID: ' . uniqid();
         $headers[] = 'Authorization: Bearer ' . $apiKey;
         $headers[] = 'Content-type: application/json; charset=utf-8';
@@ -463,9 +463,9 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      */
     private function prepareItemsForCart($order)
     {
-        $lines = [];
+        $lines = array();
         foreach ($order->items as $product) {
-            $item = [];
+            $item = array();
 
             $item['product'] = $product['name'];
             $item['quantity'] = (int)$product['quantity'];
@@ -475,10 +475,10 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             $item['price'] = $this->prepareAmount($price);
 
             if (!empty($product['tax_rate'])) {
-                $taxMode = [
+                $taxMode = array(
                     'type' => 'InvoiceLineTaxVAT',
                     'rate' => $this->getTaxRate($product['tax_rate']),
-                ];
+                );
 
                 $item['taxMode'] = $taxMode;
             }
@@ -497,9 +497,9 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      */
     private function prepareShippingForCart($order)
     {
-        $lines = [];
+        $lines = array();
         if ($order->shipping > 0) {
-            $item = [];
+            $item = array();
 
             $item['product'] = $order->shipping_name;
             $item['quantity'] = 1;
@@ -509,10 +509,10 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
 
 
             if (!empty($order->shipping_tax_rate)) {
-                $taxMode = [
+                $taxMode = array(
                     'type' => 'InvoiceLineTaxVAT',
                     'rate' => $this->getTaxRate($order->shipping_tax_rate),
-                ];
+                );
 
                 $item['taxMode'] = $taxMode;
             }

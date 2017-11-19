@@ -9,4 +9,8 @@ return array(
         'strict' => true,
         'version' => '>=5.5',
     ),
+    'php.openssl' => array(
+        'name' => 'Open SSL',
+        'strict' => true,
+    )
 );
