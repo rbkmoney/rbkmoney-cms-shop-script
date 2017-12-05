@@ -132,7 +132,21 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
         $info = curl_getinfo($curl);
 
         if ($info['http_code'] != static::HTTP_CODE_CREATED) {
-            throw new waException('Empty server response');
+            $logs = array(
+                'request' => array(
+                    'method' => 'POST',
+                    'url' => $url,
+                    'headers' => $headers,
+                    'data' => $data,
+                ),
+                'response' => array(
+                    'info' => $info,
+                    'body' => $body,
+                ),
+                'error_message' => 'Произошла ошибка при создании инвойса'
+            );
+            $this->logger($logs);
+            throw new waException('Что-то пошло не так! Мы уже знаем и работаем над этим!');
         }
 
         $transaction_data = array(
@@ -231,7 +245,18 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
         }
 
         if ($fields['amount'] <= 0) {
-            throw new waPaymentException('Amount is missing');
+
+            $logs = array(
+                'request' => array(
+                    'method' => 'POST',
+                    'transaction_data' => $transaction_data,
+                    'fields' => $fields,
+                    'error_message' => 'Amount is missing',
+                ),
+            );
+            $this->logger($logs);
+
+            throw new waPaymentException($logs['error_message']);
         }
 
         $transaction_data = array_merge($transaction_data, array(
@@ -244,7 +269,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             'view_data' => implode("\n", $view_data),
         ));
 
-        $allowedEventTypes = ['InvoicePaid', 'InvoiceCancelled'];
+        $allowedEventTypes = array('InvoicePaid', 'InvoiceCancelled');
         if (in_array($transaction_raw_data['eventType'], $allowedEventTypes)) {
             $invoiceStatus = $transaction_raw_data['invoice']['status'];
 
@@ -293,7 +318,17 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             $this->merchant_id = $matches[2];
             $this->order_id = $matches[3];
         } else {
-            throw new waPaymentException('Invalid invoice number');
+
+            $logs = array(
+                'request' => $request,
+                'content' => $content,
+                'orderId' => $orderId,
+                'error_message' => 'Invalid invoice number',
+            );
+
+            $this->logger($logs);
+
+            throw new waPaymentException($logs['error_message']);
         }
 
         // calling parent's method to continue plugin initialization
@@ -322,29 +357,40 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      */
     protected function callbackHandler($request)
     {
+        $logs = array(
+            'request' => array(
+                'method' => 'POST',
+                'data' => $request,
+            ),
+        );
+
         if (empty(waRequest::server(static::SIGNATURE))) {
             $message = 'Webhook notification signature missing';
-            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            $logs['error_message'] = $message;
+            return $this->outputWithLogger($message, $logs);
         }
 
         $paramsSignature = $this->getParametersContentSignature(waRequest::server(static::SIGNATURE));
         if (empty($paramsSignature[static::SIGNATURE_ALG])) {
             $message = 'Missing required parameter ' . static::SIGNATURE_ALG;
-            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            $logs['error_message'] = $message;
+            return $this->outputWithLogger($message, $logs);
         }
 
         if (empty($paramsSignature[static::SIGNATURE_DIGEST])) {
             $message = 'Missing required parameter ' . static::SIGNATURE_DIGEST;
-            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            $logs['error_message'] = $message;
+            return $this->outputWithLogger($message, $logs);
         }
-
 
         $signature = $this->urlsafeB64decode($paramsSignature[static::SIGNATURE_DIGEST]);
         $content = file_get_contents('php://input');
         $publicKey = '-----BEGIN PUBLIC KEY-----' . PHP_EOL . trim($this->webhook_key) . PHP_EOL . '-----END PUBLIC KEY-----';
+        $logs['content'] = $content;
         if (!$this->verificationSignature($content, $signature, $publicKey)) {
             $message = 'Webhook notification signature mismatch';
-            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            $logs['error_message'] = $message;
+            return $this->outputWithLogger($message, $logs);
         }
 
 
@@ -352,15 +398,16 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
         $currentShopId = $this->shop_id;
         if ($data['invoice']['shopID'] != $currentShopId) {
             $message = 'Shop ID is missing';
-            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            $logs['error_message'] = $message;
+            return $this->outputWithLogger($message, $logs);
         }
 
         $orderId = ifset($data['invoice']['metadata']['order_id'], "");
         if (empty($orderId)) {
             $message = 'Order ID is missing';
-            return $this->output($message, static::HTTP_CODE_BAD_REQUEST);
+            $logs['error_message'] = $message;
+            return $this->outputWithLogger($message, $logs);
         }
-
 
         $transaction_data = $this->formalizeData($data);
         switch (ifset($transaction_data['state'])) {
@@ -421,7 +468,14 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
     private function prepareAmount($amount)
     {
         if (empty($amount)) {
-            throw new waException('Amount must be set');
+
+            $logs = array(
+                'amount' => $amount,
+                'error_message' => 'Сумма заказа меньше или равна нулю'
+            );
+            $this->logger($logs);
+
+            throw new waException('Ошибка в сумме заказа. Пожалуйста, сообщите нам об этом.');
         }
         return $amount * 100;
     }
@@ -434,12 +488,13 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      */
     private function prepareMetadata($order)
     {
-        return [
-            'cms' => 'shop-script',
-            'cms_version' => "1.7.17",
-            'module' => "rbkmoneycheckout",
+        $info = wa()->getAppInfo($this->app_id);
+        return array(
+            'cms' => sprintf('Webasyst %s', $this->app_id),
+            'cms_version' => $info['version'],
+            'module' => $this->id,
             'order_id' => sprintf($this->template, $this->app_id, $this->merchant_id, $order->id),
-        ];
+        );
     }
 
     /**
@@ -544,14 +599,6 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             case 18:
                 return '18%';
                 break;
-            // НДС чека по ставке 10/110;
-            case 10100:
-                return '10/110';
-                break;
-            // НДС чека по ставке 18/118;
-            case 18118:
-                return '18/118';
-                break;
             default: # — без НДС;
                 return null;
                 break;
@@ -616,11 +663,22 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      * @param $message
      * @param int $httpCode
      */
-    function output($message, $httpCode = self::HTTP_CODE_BAD_REQUEST)
+    function outputWithLogger($message, &$logs, $httpCode = self::HTTP_CODE_BAD_REQUEST)
     {
         http_response_code($httpCode);
+        $this->logger($logs);
         echo json_encode(array('message' => $message));
         return;
+    }
+
+    /**
+     * Logger
+     *
+     * @param $logs
+     */
+    private function logger($logs)
+    {
+        self::log($this->id, $logs);
     }
 
 }
