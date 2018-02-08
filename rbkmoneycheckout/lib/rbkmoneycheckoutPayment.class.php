@@ -526,7 +526,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             $item['quantity'] = (int)$product['quantity'];
 
             $amount = $product['price'] - ifset($product['discount'], 0.0);
-            $price = number_format($amount, 2, ',', '');
+            $price = number_format($amount, 2, '.', '');
             $item['price'] = $this->prepareAmount($price);
 
             if (!empty($product['tax_rate'])) {
@@ -559,7 +559,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             $item['product'] = $order->shipping_name;
             $item['quantity'] = 1;
 
-            $price = number_format($order->shipping, 2, ',', '');
+            $price = number_format($order->shipping, 2, '.', '');
             $item['price'] = $this->prepareAmount($price);
 
 
