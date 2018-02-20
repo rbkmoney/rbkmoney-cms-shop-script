@@ -15,6 +15,7 @@
  * @property-read string $payform_button_label
  * @property-read string $payform_description
  * @property-read string $payform_company_name
+ * @property-read string $payform_button_css
  *
  * @see https://rbkmoney.github.io/docs/
  * @see https://rbkmoney.github.io/api/
@@ -176,11 +177,6 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             $dataCheckout["data-label"] = $payFormLabel;
         }
 
-        $payFormLogo = $this->payform_path_logo;
-        if (!empty($payFormLogo)) {
-            $dataCheckout["logo"] = $payFormLogo;
-        }
-
         $contact = $order->getContactField('email');
         if (!empty($contact)) {
             $dataCheckout["data-email"] = $contact;
@@ -196,6 +192,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
                 'checkout_url' => static::CHECKOUT_URL,
                 'checkout_params' => $this->prepareCheckoutParams($dataCheckout),
                 'order_id' => $order->id,
+                'payform_button_css' => $this->payform_button_css,
                 'auto_submit' => false,
             )
         );

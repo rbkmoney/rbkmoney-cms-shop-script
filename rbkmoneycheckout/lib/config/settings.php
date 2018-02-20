@@ -36,11 +36,11 @@ return array(
         'control_type' => waHtmlControl::TEXTAREA,
     ),
 
-    'payform_path_logo' => array(
+    'payform_button_css' => array(
         'value' => '',
-        'title' => 'URL к логотипу',
-        'description' => 'Ваш URL к логотипу для отображения в платежной форме',
-        'control_type' => waHtmlControl::INPUT,
+        'title' => 'Стилизация кнопки',
+        'description' => 'Стилизация кнопки открытия формы оплаты',
+        'control_type' => waHtmlControl::TEXTAREA,
     ),
 
     'payform_button_label' => array(
