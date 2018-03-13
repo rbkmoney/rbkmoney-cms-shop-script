@@ -382,7 +382,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
 
         $signature = $this->urlsafeB64decode($paramsSignature[static::SIGNATURE_DIGEST]);
         $content = file_get_contents('php://input');
-        $publicKey = '-----BEGIN PUBLIC KEY-----' . PHP_EOL . trim($this->webhook_key) . PHP_EOL . '-----END PUBLIC KEY-----';
+        $publicKey = trim($this->webhook_key);
         $logs['content'] = $content;
         if (!$this->verificationSignature($content, $signature, $publicKey)) {
             $message = 'Webhook notification signature mismatch';

@@ -15,7 +15,7 @@ return array(
     'vendor'      => '1094150',
 
     # plugin version
-    'version'     => '1.0.3',
+    'version'     => '1.0.4',
     'locale'      => array('ru_RU', ),
     'type'        => waPayment::TYPE_ONLINE,
 );
