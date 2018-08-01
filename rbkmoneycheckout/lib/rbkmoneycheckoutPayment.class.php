@@ -27,7 +27,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
      * URL for interaction
      */
     const CHECKOUT_URL = 'https://checkout.rbk.money/checkout.js';
-    const COMMON_API_URL = 'https://api.rbk.money/v1/';
+    const COMMON_API_URL = 'https://api.rbk.money/v2/';
 
     /**
      * Create invoice settings
@@ -523,6 +523,10 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             $item['quantity'] = (int)$product['quantity'];
 
             $amount = $product['price'] - ifset($product['discount'], 0.0);
+            if ($amount <= 0) {
+                continue;
+            }
+
             $price = number_format($amount, 2, '.', '');
             $item['price'] = $this->prepareAmount($price);
 
