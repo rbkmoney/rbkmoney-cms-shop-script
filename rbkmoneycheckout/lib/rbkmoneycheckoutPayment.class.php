@@ -11,6 +11,7 @@
  * @property-read string $shop_id
  * @property-read string $api_key
  * @property-read string $webhook_key
+ * @property-read string $cart_checkboks
  * @property-read string $payform_path_logo
  * @property-read string $payform_button_label
  * @property-read string $payform_description
@@ -107,16 +108,32 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
         $order = waOrder::factory($order_data);
 
         $description = str_replace('#', '№', mb_substr($order->description, 0, 255, "UTF-8"));
-        $data = array(
-            'shopID' => $this->shop_id,
-            'amount' => $this->prepareAmount($order['amount']),
-            'metadata' => $this->prepareMetadata($order),
-            'dueDate' => $this->prepareDueDate(),
-            'currency' => $order->currency,
-            'product' => $description,
-            'cart' => $this->prepareCart($order),
-            'description' => '',
-        );
+        $cart_checkboks= trim($this->cart_checkboks);
+        if (trim($this->cart_checkboks)==1)
+            { 
+                $data = array(
+                    'shopID' => $this->shop_id,
+                    'amount' => $this->prepareAmount($order['amount']),
+                    'metadata' => $this->prepareMetadata($order),
+                    'dueDate' => $this->prepareDueDate(),
+                    'currency' => $order->currency,
+                    'product' => $description,
+                    'cart' => $this->prepareCart($order),
+                    'description' => '',
+                            );
+            }
+        else 
+            { 
+                $data = array(
+                'shopID' => $this->shop_id,
+                'amount' => $this->prepareAmount($order['amount']),
+                'metadata' => $this->prepareMetadata($order),
+                'dueDate' => $this->prepareDueDate(),
+                'currency' => $order->currency,
+                'product' => $description,
+                'description' => '',
+                );
+            }
 
         $url = $this->getEndpointUrl() . 'processing/invoices';
         $headers = $this->prepareHeaders($this->api_key);
