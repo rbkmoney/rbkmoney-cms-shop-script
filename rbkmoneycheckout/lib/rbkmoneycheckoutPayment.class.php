@@ -11,6 +11,7 @@
  * @property-read string $shop_id
  * @property-read string $api_key
  * @property-read string $webhook_key
+ * @property-read string $cart_checkbox
  * @property-read string $payform_path_logo
  * @property-read string $payform_button_label
  * @property-read string $payform_description
@@ -35,6 +36,11 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
     const CREATE_INVOICE_TEMPLATE_DUE_DATE = 'Y-m-d\TH:i:s\Z';
     const CREATE_INVOICE_DUE_DATE = '+1 days';
 
+    /**
+     * Constants for checkbox cart
+     */
+    const CART_CHECKBOX_TRUE = 1;
+   
     /**
      * Constants for Callback
      */
@@ -107,6 +113,7 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
         $order = waOrder::factory($order_data);
 
         $description = str_replace('#', '№', mb_substr($order->description, 0, 255, "UTF-8"));
+        
         $data = array(
             'shopID' => $this->shop_id,
             'amount' => $this->prepareAmount($order['amount']),
@@ -114,9 +121,14 @@ class rbkmoneycheckoutPayment extends waPayment implements waIPayment
             'dueDate' => $this->prepareDueDate(),
             'currency' => $order->currency,
             'product' => $description,
-            'cart' => $this->prepareCart($order),
             'description' => '',
-        );
+                            );
+
+        if (trim($this->cart_checkbox) == static::CART_CHECKBOX_TRUE){
+                $data['cart']=$this->prepareCart($order);
+
+        }
+            
 
         $url = $this->getEndpointUrl() . 'processing/invoices';
         $headers = $this->prepareHeaders($this->api_key);

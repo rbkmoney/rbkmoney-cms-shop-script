@@ -36,6 +36,13 @@ return array(
         'control_type' => waHtmlControl::TEXTAREA,
     ),
 
+     'cart_checkbox' => array(
+        'value' => '1',
+        'title' => 'Включить отправку корзины',
+        'description' => 'Отправка корзины в составе инвойса. Используется для отправки чеков через RBKmoney(54-ФЗ)',
+        'control_type' => waHtmlControl::CHECKBOX,
+    ),
+
     'payform_button_css' => array(
         'value' => '',
         'title' => 'Стилизация кнопки',
